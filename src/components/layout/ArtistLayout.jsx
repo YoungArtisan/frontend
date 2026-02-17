@@ -7,7 +7,7 @@ const ArtistLayout = () => {
     const navItems = [
         { path: '/artist', label: 'Dashboard', icon: 'fa-chart-line' },
         { path: '/artist/messages', label: 'Messages', icon: 'fa-comments' },
-        { path: '/artist/products', label: 'My Products', icon: 'fa-box', disabled: true },
+        { path: '/artist/products', label: 'My Products', icon: 'fa-box' },
         { path: '/artist/settings', label: 'Settings', icon: 'fa-gear', disabled: true }
     ];
 
@@ -52,10 +52,10 @@ const ArtistLayout = () => {
                                     key={item.path}
                                     to={item.disabled ? '#' : item.path}
                                     className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive
-                                            ? 'bg-brand-primary text-white'
-                                            : item.disabled
-                                                ? 'text-gray-400 cursor-not-allowed'
-                                                : 'text-gray-700 hover:bg-gray-100'
+                                        ? 'bg-brand-primary text-white'
+                                        : item.disabled
+                                            ? 'text-gray-400 cursor-not-allowed'
+                                            : 'text-gray-700 hover:bg-gray-100'
                                         }`}
                                     onClick={(e) => item.disabled && e.preventDefault()}
                                 >

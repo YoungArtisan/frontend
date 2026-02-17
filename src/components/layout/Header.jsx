@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 
 const Header = () => {
     const { cartItems, cartCount, cartTotal, removeFromCart } = useCart();
+    const { currentUser, logout } = useAuth();
     const [showCartDropdown, setShowCartDropdown] = useState(false);
+    const [showUserMenu, setShowUserMenu] = useState(false);
 
     return (
         <header className="bg-bg-card h-20 shadow-sm sticky top-0 z-[100]">
@@ -17,14 +20,61 @@ const Header = () => {
 
                 <ul className="hidden md:flex gap-10">
                     <li><Link to="/" className="text-base font-semibold text-text-dark hover:text-brand-primary transition-colors">Shop</Link></li>
-                    <li><a href="/" className="text-base font-semibold text-text-dark hover:text-brand-primary transition-colors">Sell</a></li>
-                    <li><a href="/" className="text-base font-semibold text-text-dark hover:text-brand-primary transition-colors">About</a></li>
+                    <li>
+                        {currentUser?.role === 'artist' ? (
+                            <Link to="/artist" className="text-base font-bold text-brand-secondary hover:text-brand-primary transition-colors">Dashboard</Link>
+                        ) : (
+                            <Link to="/artist" className="text-base font-semibold text-text-dark hover:text-brand-primary transition-colors">Sell</Link>
+                        )}
+                    </li>
+                    <li><Link to="/" className="text-base font-semibold text-text-dark hover:text-brand-primary transition-colors">About</Link></li>
                 </ul>
 
                 <div className="flex items-center gap-5">
                     <button className="bg-transparent border-none text-xl text-text-dark cursor-pointer relative transition-colors hover:text-brand-primary" aria-label="Search">
                         <i className="fa-solid fa-magnifying-glass"></i>
                     </button>
+
+                    {/* Auth Status / Sign In */}
+                    <div className="relative">
+                        {currentUser ? (
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => setShowUserMenu(!showUserMenu)}
+                                    className="flex items-center gap-2 px-3 py-1 bg-white border border-gray-200 rounded-full hover:border-brand-primary transition-all"
+                                >
+                                    <div className="w-8 h-8 rounded-full bg-brand-primary flex items-center justify-center text-white text-xs font-bold">
+                                        {currentUser.displayName?.[0] || 'U'}
+                                    </div>
+                                    <i className={`fa-solid fa-chevron-down text-[10px] text-gray-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`}></i>
+                                </button>
+
+                                {showUserMenu && (
+                                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 z-50 overflow-hidden top-full">
+                                        <div className="px-4 py-3 border-b border-gray-100">
+                                            <p className="text-sm font-bold truncate">{currentUser.displayName}</p>
+                                            <p className="text-xs text-gray-500 truncate">{currentUser.email}</p>
+                                        </div>
+                                        {currentUser.role === 'artist' && (
+                                            <Link to="/artist" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                                Artist Dashboard
+                                            </Link>
+                                        )}
+                                        <button
+                                            onClick={logout}
+                                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                                        >
+                                            Sign Out
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <Link to="/login" className="hidden md:inline-block border-2 border-brand-primary text-brand-primary rounded-std px-5 py-2 hover:bg-brand-primary hover:text-white transition-all duration-300">
+                                Sign In
+                            </Link>
+                        )}
+                    </div>
 
                     {/* Cart Button with Dropdown */}
                     <div className="relative">
@@ -89,8 +139,6 @@ const Header = () => {
                             </div>
                         )}
                     </div>
-
-                    <a href="/" className="hidden md:inline-block border-2 border-brand-primary text-brand-primary rounded-std px-5 py-2 hover:bg-brand-primary hover:text-white transition-all duration-300">Sign In</a>
                 </div>
             </nav>
         </header>

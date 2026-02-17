@@ -1,117 +1,125 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useChat } from '../../context/ChatContext';
+import { useAuth } from '../../context/AuthContext';
 
 const ChatWidget = ({ isOpen, onClose }) => {
-    const { activeChatId, getConversation, sendMessage } = useChat();
+    const { activeChatId, sendMessage, getMessages } = useChat();
+    const { currentUser } = useAuth();
+    const [messages, setMessages] = useState([]);
     const [messageText, setMessageText] = useState('');
     const messagesEndRef = useRef(null);
-
-    const conversation = activeChatId ? getConversation(activeChatId) : null;
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
     useEffect(() => {
-        scrollToBottom();
-    }, [conversation?.messages]);
+        if (activeChatId) {
+            const unsubscribe = getMessages(activeChatId, (msgs) => {
+                setMessages(msgs);
+            });
+            return unsubscribe;
+        }
+    }, [activeChatId]);
 
-    const handleSendMessage = (e) => {
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
+
+    const handleSendMessage = async (e) => {
         e.preventDefault();
         if (messageText.trim() && activeChatId) {
-            sendMessage(activeChatId, messageText.trim(), 'customer');
-            setMessageText('');
+            const text = messageText.trim();
+            setMessageText(''); // Clear input immediately for UX
+            await sendMessage(activeChatId, text);
         }
     };
 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed bottom-4 right-4 w-96 h-[600px] bg-white rounded-lg shadow-2xl border border-gray-200 flex flex-col z-50">
+        <div className="fixed bottom-6 right-6 w-[380px] h-[550px] bg-white rounded-3xl shadow-2xl flex flex-col z-[1000] border border-gray-100 animate-slide-up overflow-hidden">
             {/* Header */}
-            <div className="bg-brand-primary text-white p-4 rounded-t-lg flex justify-between items-center">
+            <div className="p-5 bg-brand-primary text-white flex justify-between items-center">
                 <div className="flex items-center gap-3">
-                    {conversation && (
-                        <>
-                            <img
-                                src={conversation.participants.artistAvatar}
-                                alt={conversation.participants.artist}
-                                className="w-10 h-10 rounded-full bg-white"
-                            />
-                            <div>
-                                <h3 className="font-bold">{conversation.participants.artist}</h3>
-                                <p className="text-xs opacity-90">Artist</p>
-                            </div>
-                        </>
-                    )}
+                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center font-bold">
+                        A
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-sm">Artist Chat</h3>
+                        <p className="text-[10px] text-white/70 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+                            Usually replies in 1h
+                        </p>
+                    </div>
                 </div>
-                <button
-                    onClick={onClose}
-                    className="text-white hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center"
-                >
-                    ✕
+                <button onClick={onClose} className="hover:bg-white/10 p-2 rounded-full transition-colors">
+                    <i className="fa-solid fa-xmark"></i>
                 </button>
             </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
-                {conversation?.messages.map((message) => {
-                    if (message.type === 'product_context') {
-                        return (
-                            <div key={message.id} className="flex justify-center">
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 max-w-xs">
-                                    <div className="flex items-center gap-2">
-                                        <img
-                                            src={message.productImage}
-                                            alt="Product"
-                                            className="w-12 h-12 object-cover rounded"
-                                        />
-                                        <div className="flex-1">
-                                            <p className="text-xs text-blue-600 font-semibold">Product Inquiry</p>
-                                            <p className="text-sm text-gray-700">{message.text.replace('Inquiry about: ', '')}</p>
-                                        </div>
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
+                {messages.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center text-gray-400 p-8 text-center space-y-3">
+                        <i className="fa-regular fa-comments text-4xl"></i>
+                        <p className="text-sm italic">Start a conversation to discuss your customization needs!</p>
+                    </div>
+                ) : (
+                    messages.map((message) => {
+                        if (message.type === 'product_context') {
+                            return (
+                                <div key={message.id} className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm flex gap-3 max-w-[90%] mx-auto">
+                                    <img src={message.productImage} alt="Product" className="w-12 h-12 object-cover rounded-lg" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[10px] text-brand-primary font-bold uppercase tracking-wider mb-0.5">Product Inquiry</p>
+                                        <p className="text-xs font-semibold text-text-dark truncate">{message.productTitle}</p>
                                     </div>
+                                </div>
+                            );
+                        }
+
+                        const isMe = message.senderId === currentUser?.uid;
+                        return (
+                            <div key={message.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm ${isMe
+                                        ? 'bg-brand-primary text-white rounded-tr-none'
+                                        : 'bg-white border border-gray-100 text-text-dark rounded-tl-none shadow-sm'
+                                    }`}>
+                                    <p>{message.text}</p>
+                                    <p className={`text-[10px] mt-1 opacity-70 ${isMe ? 'text-right' : 'text-left'}`}>
+                                        {message.timestamp?.toDate ? message.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Pending...'}
+                                    </p>
                                 </div>
                             </div>
                         );
-                    }
-
-                    const isCustomer = message.sender === 'customer';
-                    return (
-                        <div key={message.id} className={`flex ${isCustomer ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-xs px-4 py-2 rounded-lg ${isCustomer
-                                    ? 'bg-brand-primary text-white'
-                                    : 'bg-white border border-gray-200 text-gray-800'
-                                }`}>
-                                <p className="text-sm">{message.text}</p>
-                                <p className={`text-xs mt-1 ${isCustomer ? 'text-white/70' : 'text-gray-400'}`}>
-                                    {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </p>
-                            </div>
-                        </div>
-                    );
-                })}
+                    })
+                )}
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
-            <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-200 bg-white rounded-b-lg">
-                <div className="flex gap-2">
+            {/* Input Area */}
+            <form onSubmit={handleSendMessage} className="p-4 bg-white border-t border-gray-100">
+                <div className="relative flex items-center">
                     <input
                         type="text"
                         value={messageText}
                         onChange={(e) => setMessageText(e.target.value)}
-                        placeholder="Type your message..."
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-primary"
+                        placeholder="Ask about materials, colors..."
+                        className="w-full bg-gray-50/80 border border-transparent focus:bg-white focus:border-brand-primary/20 rounded-2xl py-3 pl-4 pr-12 text-sm transition-all focus:outline-none"
                     />
                     <button
                         type="submit"
                         disabled={!messageText.trim()}
-                        className="px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="absolute right-2 w-8 h-8 flex items-center justify-center bg-brand-primary text-white rounded-xl hover:bg-brand-primary/90 transition-all disabled:opacity-30"
                     >
-                        <i className="fa-solid fa-paper-plane"></i>
+                        <i className="fa-solid fa-paper-plane text-xs"></i>
                     </button>
                 </div>
+                <p className="text-[10px] text-gray-400 text-center mt-2">
+                    <i className="fa-solid fa-shield-halved mr-1"></i>
+                    Payments are safe via YoungArtisan
+                </p>
             </form>
         </div>
     );

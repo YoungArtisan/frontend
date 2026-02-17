@@ -1,22 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { products } from '../../data/products';
+import { getProductById } from '../../services/ProductService';
 import { useCart } from '../../context/CartContext';
 import { useChat } from '../../context/ChatContext';
 import ChatWidget from '../features/ChatWidget';
 
 const ProductDetails = () => {
     const { id } = useParams();
-    const product = products.find(p => p.id === parseInt(id));
+    const [product, setProduct] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const { addToCart } = useCart();
     const { startConversation } = useChat();
     const [showAddedFeedback, setShowAddedFeedback] = useState(false);
     const [isChatOpen, setIsChatOpen] = useState(false);
 
+    useEffect(() => {
+        const fetchProduct = async () => {
+            try {
+                setLoading(true);
+                const data = await getProductById(id);
+                setProduct(data);
+            } catch (error) {
+                console.error('Error loading product:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProduct();
+    }, [id]);
+
+    if (loading) {
+        return (
+            <div className="container mx-auto px-4 py-8 text-center min-h-[60vh] flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-primary"></div>
+            </div>
+        );
+    }
+
     if (!product) {
         return (
-            <div className="container mx-auto px-4 py-8 text-center">
+            <div className="container mx-auto px-4 py-8 text-center min-h-[60vh] flex flex-col items-center justify-center">
                 <h2 className="text-2xl font-bold mb-4">Product Not Found</h2>
                 <Link to="/" className="btn btn-primary">Return to Shop</Link>
             </div>
@@ -51,7 +76,7 @@ const ProductDetails = () => {
                                 className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
                             />
                         </div>
-                        {/* Thumbnails - Using the same image for demo since we only have one per product */}
+                        {/* Thumbnails */}
                         <div className="grid grid-cols-3 gap-4">
                             {[0, 1, 2].map((index) => (
                                 <button

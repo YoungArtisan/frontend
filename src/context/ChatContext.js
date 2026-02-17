@@ -1,4 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import {
+    collection,
+    addDoc,
+    query,
+    where,
+    onSnapshot,
+    orderBy,
+    serverTimestamp,
+    doc,
+    updateDoc
+} from 'firebase/firestore';
+import { db } from '../firebase/config';
+import { useAuth } from './AuthContext';
 
 const ChatContext = createContext();
 
@@ -11,99 +24,137 @@ export const useChat = () => {
 };
 
 export const ChatProvider = ({ children }) => {
-    const [conversations, setConversations] = useState(() => {
-        const savedConversations = localStorage.getItem('youngArtisanChats');
-        return savedConversations ? JSON.parse(savedConversations) : [];
-    });
-
+    const { currentUser } = useAuth();
+    const [conversations, setConversations] = useState([]);
     const [activeChatId, setActiveChatId] = useState(null);
 
-    // Save to localStorage whenever conversations change
+    // Listen to conversations where the current user is a participant
     useEffect(() => {
-        localStorage.setItem('youngArtisanChats', JSON.stringify(conversations));
-    }, [conversations]);
+        if (!currentUser) {
+            setConversations([]);
+            setActiveChatId(null);
+            return;
+        }
 
-    const startConversation = (artist, product) => {
-        // Check if conversation with this artist already exists
-        const existingConversation = conversations.find(
-            conv => conv.participants.artist === artist.name
+        console.log('Setting up conversations listener for user:', currentUser.uid);
+
+        const q = query(
+            collection(db, 'conversations'),
+            where('participants', 'array-contains', currentUser.uid),
+            orderBy('updatedAt', 'desc')
         );
 
-        if (existingConversation) {
-            // Add product context message to existing conversation
-            const productContextMessage = {
-                id: Date.now(),
-                sender: 'system',
-                type: 'product_context',
-                text: `Inquiry about: ${product.title}`,
+        const unsubscribe = onSnapshot(
+            q,
+            (snapshot) => {
+                console.log('Conversations snapshot received:', snapshot.docs.length, 'conversations');
+                const convs = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                console.log('Parsed conversations:', convs);
+                setConversations(convs);
+            },
+            (error) => {
+                console.error('Error fetching conversations:', error);
+                console.error('Error code:', error.code);
+                console.error('Error message:', error.message);
+
+                // If it's an index error, the error message will contain a link to create the index
+                if (error.code === 'failed-precondition') {
+                    console.error('INDEX REQUIRED! Check the error message above for a link to create the index.');
+                }
+            }
+        );
+
+        return unsubscribe;
+    }, [currentUser]);
+
+    const startConversation = async (artist, product = null) => {
+        if (!currentUser) {
+            console.error('Cannot start conversation: No user logged in');
+            return;
+        }
+
+        if (!artist.uid) {
+            console.error('Cannot start conversation: Artist UID is missing', artist);
+            alert('Unable to start conversation: Artist information is incomplete. Please try refreshing the page.');
+            return;
+        }
+
+        // Check if conversation already exists
+        const existingConv = conversations.find(c =>
+            c.participants.includes(artist.uid)
+        );
+
+        let chatId = existingConv?.id;
+
+        if (!existingConv) {
+            // Create new conversation
+            const convData = {
+                participants: [currentUser.uid, artist.uid],
+                participantNames: {
+                    [currentUser.uid]: currentUser.displayName,
+                    [artist.uid]: artist.name
+                },
+                updatedAt: serverTimestamp(),
+                lastMessage: product ? `Inquiry about: ${product.title}` : 'Started a conversation'
+            };
+
+            console.log('Creating new conversation:', convData);
+            const docRef = await addDoc(collection(db, 'conversations'), convData);
+            chatId = docRef.id;
+        }
+
+        if (product) {
+            // Send product context message
+            await sendMessage(chatId, `Inquiry about: ${product.title}`, 'product_context', {
                 productId: product.id,
                 productImage: product.image,
-                timestamp: new Date().toISOString()
-            };
-
-            setConversations(prev =>
-                prev.map(conv =>
-                    conv.id === existingConversation.id
-                        ? { ...conv, messages: [...conv.messages, productContextMessage] }
-                        : conv
-                )
-            );
-
-            setActiveChatId(existingConversation.id);
-            return existingConversation.id;
-        } else {
-            // Create new conversation
-            const newConversation = {
-                id: Date.now(),
-                participants: {
-                    customer: 'Customer', // In real app, this would be the logged-in user
-                    artist: artist.name,
-                    artistAvatar: artist.avatar
-                },
-                messages: [
-                    {
-                        id: Date.now(),
-                        sender: 'system',
-                        type: 'product_context',
-                        text: `Inquiry about: ${product.title}`,
-                        productId: product.id,
-                        productImage: product.image,
-                        timestamp: new Date().toISOString()
-                    }
-                ],
-                lastMessageTime: new Date().toISOString()
-            };
-
-            setConversations(prev => [...prev, newConversation]);
-            setActiveChatId(newConversation.id);
-            return newConversation.id;
+                productTitle: product.title
+            });
         }
+
+        setActiveChatId(chatId);
+        return chatId;
     };
 
-    const sendMessage = (conversationId, text, sender = 'customer') => {
-        const newMessage = {
-            id: Date.now(),
-            sender,
-            type: 'text',
+    const sendMessage = async (chatId, text, type = 'text', metadata = {}) => {
+        if (!currentUser) return;
+
+        const messageData = {
+            chatId,
             text,
-            timestamp: new Date().toISOString()
+            senderId: currentUser.uid,
+            senderName: currentUser.displayName,
+            timestamp: serverTimestamp(),
+            type,
+            ...metadata
         };
 
-        setConversations(prev =>
-            prev.map(conv =>
-                conv.id === conversationId
-                    ? {
-                        ...conv,
-                        messages: [...conv.messages, newMessage],
-                        lastMessageTime: new Date().toISOString()
-                    }
-                    : conv
-            )
-        );
+        // Add message to subcollection
+        await addDoc(collection(db, 'conversations', chatId, 'messages'), messageData);
+
+        // Update conversation last message and timestamp
+        await updateDoc(doc(db, 'conversations', chatId), {
+            lastMessage: text,
+            updatedAt: serverTimestamp()
+        });
     };
 
-    const getConversation = (conversationId) => {
-        return conversations.find(conv => conv.id === conversationId);
+    const getMessages = (chatId, callback) => {
+        const q = query(
+            collection(db, 'conversations', chatId, 'messages'),
+            orderBy('timestamp', 'asc')
+        );
+
+        return onSnapshot(q, (snapshot) => {
+            const messages = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            callback(messages);
+        });
     };
 
     const value = {
@@ -112,7 +163,7 @@ export const ChatProvider = ({ children }) => {
         setActiveChatId,
         startConversation,
         sendMessage,
-        getConversation
+        getMessages
     };
 
     return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

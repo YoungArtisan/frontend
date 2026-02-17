@@ -3,13 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
+import { placeOrder } from '../services/OrderService';
 
 const CheckoutPage = () => {
     const navigate = useNavigate();
     const { cartItems, cartTotal, clearCart, updateQuantity, removeFromCart } = useCart();
+    const { currentUser } = useAuth();
+    const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
-        fullName: '',
-        email: '',
+        fullName: currentUser?.displayName || '',
+        email: currentUser?.email || '',
         address: '',
         city: '',
         zipCode: '',
@@ -26,8 +30,14 @@ const CheckoutPage = () => {
         }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!currentUser) {
+            alert('Please sign in to place an order.');
+            navigate('/login');
+            return;
+        }
 
         // Basic validation
         if (!formData.fullName || !formData.email || !formData.address || !formData.city || !formData.zipCode) {
@@ -35,9 +45,44 @@ const CheckoutPage = () => {
             return;
         }
 
-        // Simulate order placement
-        clearCart();
-        navigate('/order-confirmation');
+        try {
+            setLoading(true);
+            const subtotal = cartTotal;
+            const tax = subtotal * 0.1;
+            const total = subtotal + tax;
+
+            const orderData = {
+                customerId: currentUser.uid,
+                customerName: formData.fullName,
+                email: formData.email,
+                shippingAddress: {
+                    address: formData.address,
+                    city: formData.city,
+                    zipCode: formData.zipCode
+                },
+                items: cartItems.map(item => ({
+                    productId: item.id,
+                    title: item.title,
+                    price: item.price,
+                    quantity: item.quantity,
+                    artistId: item.artist.uid || item.artist.name,
+                    artistName: item.artist.name,
+                    image: item.image
+                })),
+                subtotal,
+                tax,
+                total
+            };
+
+            await placeOrder(orderData);
+            clearCart();
+            navigate('/order-confirmation');
+        } catch (error) {
+            console.error('Error during checkout:', error);
+            alert('Failed to place order. Please try again.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     if (cartItems.length === 0) {
@@ -175,8 +220,12 @@ const CheckoutPage = () => {
                                     </div>
                                 </div>
 
-                                <button type="submit" className="w-full btn btn-primary text-lg py-4">
-                                    Place Order - ${total.toFixed(2)}
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full btn btn-primary text-lg py-4 disabled:opacity-50"
+                                >
+                                    {loading ? 'Processing...' : `Place Order - $${total.toFixed(2)}`}
                                 </button>
                             </form>
                         </div>

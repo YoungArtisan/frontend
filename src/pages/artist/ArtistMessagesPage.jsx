@@ -1,22 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useChat } from '../../context/ChatContext';
+import { useAuth } from '../../context/AuthContext';
 
 const ArtistMessagesPage = () => {
-    const { conversations, sendMessage } = useChat();
-    const [selectedConversationId, setSelectedConversationId] = useState(
-        conversations.length > 0 ? conversations[0].id : null
-    );
+    const { conversations, activeChatId, setActiveChatId, sendMessage, getMessages } = useChat();
+    const { currentUser } = useAuth();
+    const [messages, setMessages] = useState([]);
     const [messageText, setMessageText] = useState('');
 
-    const selectedConversation = conversations.find(conv => conv.id === selectedConversationId);
+    useEffect(() => {
+        if (activeChatId) {
+            const unsubscribe = getMessages(activeChatId, (msgs) => {
+                setMessages(msgs);
+            });
+            return unsubscribe;
+        } else {
+            setMessages([]);
+        }
+    }, [activeChatId]);
 
-    const handleSendMessage = (e) => {
+    const handleSendMessage = async (e) => {
         e.preventDefault();
-        if (messageText.trim() && selectedConversationId) {
-            sendMessage(selectedConversationId, messageText.trim(), 'artist');
+        if (messageText.trim() && activeChatId) {
+            const text = messageText.trim();
             setMessageText('');
+            await sendMessage(activeChatId, text);
         }
     };
+
+    const activeConversation = conversations.find(c => c.id === activeChatId);
 
     return (
         <div className="h-[calc(100vh-73px)] flex">
@@ -36,31 +48,30 @@ const ArtistMessagesPage = () => {
                     ) : (
                         <div className="divide-y divide-gray-200">
                             {conversations.map((conversation) => {
-                                const lastMessage = conversation.messages[conversation.messages.length - 1];
-                                const isSelected = selectedConversationId === conversation.id;
+                                const isSelected = activeChatId === conversation.id;
+                                const otherParticipantUid = conversation.participants.find(uid => uid !== currentUser?.uid);
+                                const otherParticipantName = conversation.participantNames?.[otherParticipantUid] || 'Customer';
 
                                 return (
                                     <button
                                         key={conversation.id}
-                                        onClick={() => setSelectedConversationId(conversation.id)}
+                                        onClick={() => setActiveChatId(conversation.id)}
                                         className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${isSelected ? 'bg-blue-50 border-l-4 border-brand-primary' : ''
                                             }`}
                                     >
                                         <div className="flex items-center gap-3 mb-2">
                                             <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center text-sm font-bold">
-                                                {conversation.participants.customer[0]}
+                                                {otherParticipantName[0]}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="font-semibold truncate">{conversation.participants.customer}</p>
+                                                <p className="font-semibold truncate">{otherParticipantName}</p>
                                                 <p className="text-xs text-gray-500">
-                                                    {new Date(conversation.lastMessageTime).toLocaleDateString()}
+                                                    {conversation.updatedAt?.toDate ? conversation.updatedAt.toDate().toLocaleDateString() : 'Just now'}
                                                 </p>
                                             </div>
                                         </div>
                                         <p className="text-sm text-gray-600 truncate">
-                                            {lastMessage.type === 'product_context'
-                                                ? lastMessage.text
-                                                : lastMessage.text}
+                                            {conversation.lastMessage}
                                         </p>
                                     </button>
                                 );
@@ -72,22 +83,24 @@ const ArtistMessagesPage = () => {
 
             {/* Chat Area */}
             <div className="flex-1 flex flex-col bg-gray-50">
-                {selectedConversation ? (
+                {activeConversation ? (
                     <>
                         {/* Chat Header */}
                         <div className="bg-white p-4 border-b border-gray-200 flex items-center gap-3">
                             <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center text-sm font-bold">
-                                {selectedConversation.participants.customer[0]}
+                                {activeConversation.participantNames?.[activeConversation.participants.find(uid => uid !== currentUser?.uid)]?.[0] || 'C'}
                             </div>
                             <div>
-                                <h3 className="font-bold">{selectedConversation.participants.customer}</h3>
+                                <h3 className="font-bold">
+                                    {activeConversation.participantNames?.[activeConversation.participants.find(uid => uid !== currentUser?.uid)] || 'Customer'}
+                                </h3>
                                 <p className="text-sm text-gray-500">Customer</p>
                             </div>
                         </div>
 
                         {/* Messages */}
                         <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                            {selectedConversation.messages.map((message) => {
+                            {messages.map((message) => {
                                 if (message.type === 'product_context') {
                                     return (
                                         <div key={message.id} className="flex justify-center">
@@ -108,16 +121,16 @@ const ArtistMessagesPage = () => {
                                     );
                                 }
 
-                                const isArtist = message.sender === 'artist';
+                                const isMe = message.senderId === currentUser?.uid;
                                 return (
-                                    <div key={message.id} className={`flex ${isArtist ? 'justify-end' : 'justify-start'}`}>
-                                        <div className={`max-w-md px-4 py-3 rounded-lg ${isArtist
+                                    <div key={message.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                        <div className={`max-w-md px-4 py-3 rounded-lg ${isMe
                                                 ? 'bg-brand-primary text-white'
                                                 : 'bg-white border border-gray-200 text-gray-800'
                                             }`}>
                                             <p className="text-sm">{message.text}</p>
-                                            <p className={`text-xs mt-1 ${isArtist ? 'text-white/70' : 'text-gray-400'}`}>
-                                                {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            <p className={`text-xs mt-1 ${isMe ? 'text-white/70' : 'text-gray-400'}`}>
+                                                {message.timestamp?.toDate ? message.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Pending...'}
                                             </p>
                                         </div>
                                     </div>
