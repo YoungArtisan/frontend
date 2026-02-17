@@ -79,9 +79,9 @@ const Header = () => {
                                                         ${cartTotal.toFixed(2)}
                                                     </span>
                                                 </div>
-                                                <button className="w-full btn btn-primary">
+                                                <Link to="/checkout" className="w-full btn btn-primary block text-center">
                                                     Checkout
-                                                </button>
+                                                </Link>
                                             </div>
                                         </>
                                     )}
