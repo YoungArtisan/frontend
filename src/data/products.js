@@ -12,7 +12,8 @@ export const products = [
         artist: {
             name: "CraftyKid_Leo",
             avatar: "https://placehold.co/30x30?text=L"
-        }
+        },
+        description: "Handmade with colorful plastic pony beads and strong cord. Perfect for backpacks!\nSize: approx. 4 inches."
     },
     {
         id: 2,
@@ -22,7 +23,8 @@ export const products = [
         artist: {
             name: "BeadMaster_Mia",
             avatar: "https://placehold.co/30x30?text=M"
-        }
+        },
+        description: "A cute daisy chain bracelet made with high-quality beads. Great for summer outfits!"
     },
     {
         id: 3,
@@ -32,7 +34,8 @@ export const products = [
         artist: {
             name: "Artisan_Sam",
             avatar: "https://placehold.co/30x30?text=S"
-        }
+        },
+        description: "Cool geometric patterns in vibrant colors. Sturdy and stylish keychain."
     },
     {
         id: 4,
@@ -42,6 +45,7 @@ export const products = [
         artist: {
             name: "Creative_Chloe",
             avatar: "https://placehold.co/30x30?text=C"
-        }
+        },
+        description: "Capture the essence of summer with this beautiful beaded necklace."
     }
 ];
