@@ -1,4 +1,4 @@
-import { collection, getDocs, doc, getDoc, query, where, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, query, where, addDoc, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 
 export const getProducts = async () => {
@@ -68,5 +68,30 @@ export const getProductsByArtist = async (artistUid) => {
     } catch (error) {
         console.error('Error fetching artist products:', error);
         return [];
+    }
+};
+
+export const updateProduct = async (productId, productData) => {
+    try {
+        const productRef = doc(db, 'products', productId);
+        await updateDoc(productRef, {
+            ...productData,
+            updatedAt: serverTimestamp()
+        });
+        return { id: productId, ...productData };
+    } catch (error) {
+        console.error('Error updating product:', error);
+        throw error;
+    }
+};
+
+export const deleteProduct = async (productId) => {
+    try {
+        const productRef = doc(db, 'products', productId);
+        await deleteDoc(productRef);
+        return productId;
+    } catch (error) {
+        console.error('Error deleting product:', error);
+        throw error;
     }
 };

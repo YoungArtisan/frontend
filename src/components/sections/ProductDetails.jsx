@@ -31,6 +31,11 @@ const ProductDetails = () => {
         fetchProduct();
     }, [id]);
 
+    // Reset active image index when product changes
+    useEffect(() => {
+        setActiveImageIndex(0);
+    }, [product]);
+
     if (loading) {
         return (
             <div className="container mx-auto px-4 py-8 text-center min-h-[60vh] flex items-center justify-center">
@@ -71,23 +76,25 @@ const ProductDetails = () => {
                     <div className="space-y-4">
                         <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 aspect-square flex items-center justify-center overflow-hidden">
                             <img
-                                src={product.image}
+                                src={(product.images && product.images[activeImageIndex]) || product.image}
                                 alt={product.title}
                                 className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
                             />
                         </div>
-                        {/* Thumbnails */}
-                        <div className="grid grid-cols-3 gap-4">
-                            {[0, 1, 2].map((index) => (
-                                <button
-                                    key={index}
-                                    onClick={() => setActiveImageIndex(index)}
-                                    className={`bg-white p-2 rounded-xl border-2 transition-colors ${activeImageIndex === index ? 'border-brand-primary' : 'border-transparent hover:border-gray-200'}`}
-                                >
-                                    <img src={product.image} alt={`View ${index + 1}`} className="w-full h-full object-contain" />
-                                </button>
-                            ))}
-                        </div>
+                        {/* Thumbnails - Only show if there are multiple images */}
+                        {product.images && product.images.length > 1 && (
+                            <div className={`grid gap-4 ${product.images.length === 2 ? 'grid-cols-2' : product.images.length === 3 ? 'grid-cols-3' : product.images.length === 4 ? 'grid-cols-4' : 'grid-cols-5'}`}>
+                                {product.images.map((image, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => setActiveImageIndex(index)}
+                                        className={`bg-white p-2 rounded-xl border-2 transition-colors ${activeImageIndex === index ? 'border-brand-primary' : 'border-transparent hover:border-gray-200'}`}
+                                    >
+                                        <img src={image} alt={`View ${index + 1}`} className="w-full h-full object-contain" />
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* Details Column */}
