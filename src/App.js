@@ -15,6 +15,7 @@ import { CartProvider } from './context/CartContext';
 import { ChatProvider } from './context/ChatContext';
 import { AuthProvider } from './context/AuthContext';
 import { seedProducts } from './firebase/seed';
+import ChatWidget from './components/features/ChatWidget';
 
 function App() {
   useEffect(() => {
@@ -53,6 +54,9 @@ function App() {
                   <Route path="products" element={<ArtistProductsPage />} />
                 </Route>
               </Routes>
+
+              {/* Global Chat Widget */}
+              <ChatWidget />
             </div>
           </Router>
         </ChatProvider>

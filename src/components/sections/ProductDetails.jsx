@@ -13,7 +13,6 @@ const ProductDetails = () => {
     const { addToCart } = useCart();
     const { startConversation } = useChat();
     const [showAddedFeedback, setShowAddedFeedback] = useState(false);
-    const [isChatOpen, setIsChatOpen] = useState(false);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -65,7 +64,6 @@ const ProductDetails = () => {
 
     const handleChatWithArtist = () => {
         startConversation(product.artist, product);
-        setIsChatOpen(true);
     };
 
     return (
@@ -144,7 +142,7 @@ const ProductDetails = () => {
             </div>
 
             {/* Chat Widget */}
-            <ChatWidget isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+            <ChatWidget />
         </section>
     );
 };

@@ -8,7 +8,8 @@ import {
     orderBy,
     serverTimestamp,
     doc,
-    updateDoc
+    updateDoc,
+    getDocs
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from './AuthContext';
@@ -27,6 +28,9 @@ export const ChatProvider = ({ children }) => {
     const { currentUser } = useAuth();
     const [conversations, setConversations] = useState([]);
     const [activeChatId, setActiveChatId] = useState(null);
+    const [activeMessages, setActiveMessages] = useState([]);
+    const [draftChat, setDraftChat] = useState(null); // { artist, product, messages: [] }
+    const [isChatOpen, setIsChatOpen] = useState(false);
 
     // Listen to conversations where the current user is a participant
     useEffect(() => {
@@ -35,8 +39,6 @@ export const ChatProvider = ({ children }) => {
             setActiveChatId(null);
             return;
         }
-
-        console.log('Setting up conversations listener for user:', currentUser.uid);
 
         const q = query(
             collection(db, 'conversations'),
@@ -47,22 +49,16 @@ export const ChatProvider = ({ children }) => {
         const unsubscribe = onSnapshot(
             q,
             (snapshot) => {
-                console.log('Conversations snapshot received:', snapshot.docs.length, 'conversations');
                 const convs = snapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
                 }));
-                console.log('Parsed conversations:', convs);
                 setConversations(convs);
             },
             (error) => {
                 console.error('Error fetching conversations:', error);
-                console.error('Error code:', error.code);
-                console.error('Error message:', error.message);
-
-                // If it's an index error, the error message will contain a link to create the index
                 if (error.code === 'failed-precondition') {
-                    console.error('INDEX REQUIRED! Check the error message above for a link to create the index.');
+                    console.error('INDEX REQUIRED! Check the error message for a link to create the index.');
                 }
             }
         );
@@ -70,6 +66,30 @@ export const ChatProvider = ({ children }) => {
         return unsubscribe;
     }, [currentUser]);
 
+    // Listen to messages for the active chat
+    useEffect(() => {
+        if (!activeChatId) {
+            setActiveMessages([]);
+            return;
+        }
+
+        const messagesRef = collection(db, 'conversations', activeChatId, 'messages');
+        const q = query(messagesRef, orderBy('timestamp', 'asc'));
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const msgs = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setActiveMessages(msgs);
+        });
+
+        return unsubscribe;
+    }, [activeChatId]);
+
+    const [currentSessionProduct, setCurrentSessionProduct] = useState(null); // The product the user is CURRENTLY looking at/discussing
+
+    // Start a conversation (DRAFT MODE - no Firestore write)
     const startConversation = async (artist, product = null) => {
         if (!currentUser) {
             console.error('Cannot start conversation: No user logged in');
@@ -78,8 +98,15 @@ export const ChatProvider = ({ children }) => {
 
         if (!artist.uid) {
             console.error('Cannot start conversation: Artist UID is missing', artist);
-            alert('Unable to start conversation: Artist information is incomplete. Please try refreshing the page.');
+            alert('Unable to start conversation: Artist information is incomplete.');
             return;
+        }
+
+        // Set the current session product explicitly
+        if (product) {
+            setCurrentSessionProduct(product);
+        } else {
+            setCurrentSessionProduct(null);
         }
 
         // Check if conversation already exists
@@ -87,84 +114,141 @@ export const ChatProvider = ({ children }) => {
             c.participants.includes(artist.uid)
         );
 
-        let chatId = existingConv?.id;
-
-        if (!existingConv) {
-            // Create new conversation
-            const convData = {
-                participants: [currentUser.uid, artist.uid],
-                participantNames: {
-                    [currentUser.uid]: currentUser.displayName,
-                    [artist.uid]: artist.name
-                },
-                updatedAt: serverTimestamp(),
-                lastMessage: product ? `Inquiry about: ${product.title}` : 'Started a conversation'
-            };
-
-            console.log('Creating new conversation:', convData);
-            const docRef = await addDoc(collection(db, 'conversations'), convData);
-            chatId = docRef.id;
-        }
-
-        if (product) {
-            // Send product context message
-            await sendMessage(chatId, `Inquiry about: ${product.title}`, 'product_context', {
-                productId: product.id,
-                productImage: product.image,
-                productTitle: product.title
+        if (existingConv) {
+            // Open existing conversation
+            setActiveChatId(existingConv.id);
+            setDraftChat(null);
+            setIsChatOpen(true);
+        } else {
+            // Create DRAFT conversation (local only)
+            setDraftChat({
+                artist,
+                product,
+                messages: []
             });
+            setActiveChatId(null);
+            setActiveMessages([]);
+            setIsChatOpen(true);
         }
-
-        setActiveChatId(chatId);
-        return chatId;
     };
 
-    const sendMessage = async (chatId, text, type = 'text', metadata = {}) => {
-        if (!currentUser) return;
+    // Send a message (handles both draft and existing conversations)
+    const sendMessage = async (messageText, messageType = 'text', metadata = null, currentProduct = null) => {
+        if (!currentUser || !messageText.trim()) return;
+
+        // Determine product data to save/update
+        // Priority: Explicitly passed > Session Product > Draft Product
+        const productToUse = currentProduct || currentSessionProduct || draftChat?.product;
+
+        const productToSave = productToUse ? {
+            id: productToUse.id,
+            title: productToUse.title,
+            image: productToUse.images?.[0] || productToUse.image,
+            price: productToUse.price,
+            lastDiscussed: serverTimestamp()
+        } : null;
 
         const messageData = {
-            chatId,
-            text,
             senderId: currentUser.uid,
             senderName: currentUser.displayName,
-            timestamp: serverTimestamp(),
-            type,
-            ...metadata
+            text: messageText,
+            type: messageType,
+            metadata,
+            productId: productToSave?.id || null, // NEW: Store which product this message is about
+            timestamp: serverTimestamp()
         };
 
-        // Add message to subcollection
-        await addDoc(collection(db, 'conversations', chatId, 'messages'), messageData);
+        try {
+            // Case 1: Draft conversation (first message)
+            if (draftChat) {
+                // Prepare initial discussedProducts map
+                const discussedProducts = {};
+                if (productToSave) {
+                    discussedProducts[productToSave.id] = productToSave;
+                }
 
-        // Update conversation last message and timestamp
-        await updateDoc(doc(db, 'conversations', chatId), {
-            lastMessage: text,
-            updatedAt: serverTimestamp()
-        });
+                // Create the conversation in Firestore
+                const convData = {
+                    participants: [currentUser.uid, draftChat.artist.uid],
+                    participantNames: {
+                        [currentUser.uid]: currentUser.displayName,
+                        [draftChat.artist.uid]: draftChat.artist.name
+                    },
+                    updatedAt: serverTimestamp(),
+                    lastMessage: messageText,
+                    // Keeping productContext for backward compatibility / current focus
+                    productContext: productToSave || null,
+                    discussedProducts // NEW: Map of all products discussed
+                };
+
+                const docRef = await addDoc(collection(db, 'conversations'), convData);
+                const chatId = docRef.id;
+
+                // Add the message
+                await addDoc(collection(db, 'conversations', chatId, 'messages'), messageData);
+
+                // Switch from draft to real conversation
+                setActiveChatId(chatId);
+                setDraftChat(null);
+            }
+            // Case 2: Existing conversation
+            else if (activeChatId) {
+                await addDoc(collection(db, 'conversations', activeChatId, 'messages'), messageData);
+
+                const updateData = {
+                    lastMessage: messageText,
+                    updatedAt: serverTimestamp()
+                };
+
+                // If discussing a product, update specific fields
+                if (productToSave) {
+                    updateData[`discussedProducts.${productToSave.id}`] = productToSave;
+                    updateData['productContext'] = { // Update legacy context too
+                        id: productToSave.id,
+                        title: productToSave.title,
+                        image: productToSave.image,
+                        price: productToSave.price
+                    };
+                }
+
+                await updateDoc(doc(db, 'conversations', activeChatId), updateData);
+            }
+        } catch (error) {
+            console.error('Error sending message:', error);
+            throw error;
+        }
     };
 
-    const getMessages = (chatId, callback) => {
-        const q = query(
-            collection(db, 'conversations', chatId, 'messages'),
-            orderBy('timestamp', 'asc')
-        );
+    // Close chat
+    const closeChat = () => {
+        setIsChatOpen(false);
+        setDraftChat(null);
+        // Don't clear activeChatId - keep it for re-opening
+    };
 
-        return onSnapshot(q, (snapshot) => {
-            const messages = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            callback(messages);
-        });
+    // Get conversation by ID
+    const getConversationById = (id) => {
+        return conversations.find(c => c.id === id);
     };
 
     const value = {
         conversations,
         activeChatId,
         setActiveChatId,
+        activeMessages,
+        draftChat,
+        isChatOpen,
+        setIsChatOpen,
         startConversation,
         sendMessage,
-        getMessages
+        closeChat,
+        getConversationById,
+        currentSessionProduct // Export this
     };
 
-    return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
+    return (
+        <ChatContext.Provider value={value}>
+            {children}
+        </ChatContext.Provider>
+    );
 };
