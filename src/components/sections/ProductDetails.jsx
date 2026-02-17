@@ -2,13 +2,17 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { products } from '../../data/products';
 import { useCart } from '../../context/CartContext';
+import { useChat } from '../../context/ChatContext';
+import ChatWidget from '../features/ChatWidget';
 
 const ProductDetails = () => {
     const { id } = useParams();
     const product = products.find(p => p.id === parseInt(id));
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const { addToCart } = useCart();
+    const { startConversation } = useChat();
     const [showAddedFeedback, setShowAddedFeedback] = useState(false);
+    const [isChatOpen, setIsChatOpen] = useState(false);
 
     if (!product) {
         return (
@@ -27,6 +31,11 @@ const ProductDetails = () => {
         setTimeout(() => {
             setShowAddedFeedback(false);
         }, 2000);
+    };
+
+    const handleChatWithArtist = () => {
+        startConversation(product.artist, product);
+        setIsChatOpen(true);
     };
 
     return (
@@ -90,14 +99,20 @@ const ProductDetails = () => {
                                     </>
                                 )}
                             </button>
-                            <button className="w-full btn bg-[#3B8FAB] text-white hover:bg-[#2d7a94] flex items-center justify-center gap-2">
-                                <span className="text-xl">💬</span> Request Custom Colors
+                            <button
+                                onClick={handleChatWithArtist}
+                                className="w-full btn bg-[#3B8FAB] text-white hover:bg-[#2d7a94] flex items-center justify-center gap-2"
+                            >
+                                <span className="text-xl">💬</span> Chat with Artist
                             </button>
-                            <p className="text-center text-xs text-gray-400 mt-2">(Chat with Artist)</p>
+                            <p className="text-center text-xs text-gray-400 mt-2">(Ask about customization)</p>
                         </div>
                     </div>
                 </div>
             </div>
+
+            {/* Chat Widget */}
+            <ChatWidget isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
         </section>
     );
 };
