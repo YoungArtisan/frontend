@@ -1,0 +1,45 @@
+
+
+Yet to do:
+- On Artist Dashboard, at top right corner, Name is still CraftyKid_Leo, instead of real user name. There are two places for shosing user name, one at "Welcome back, Bebib Badnat! 👋", here it is good. but near to view shop icon name is still CraftyKid_Leo.
+- On Artist Dashboard: total prodcuts, total sales, active orders, messages, all are not showing correct values.
+- Also, on ArtistDashboard, there is no way to see the recieved orders. So, I can't see the orders I got from customers. And the order details.
+- On checkout, let's remove "Payment Information". After full name, let's add Mobile number field as required field and make email field optional.
+
+Let's make an Implementation plan for above "Yet to do" list. Let's have a very solid plan.
+
+Yet To Do:
+- In ArtistDashboard, there is no option menu for language changing between english and Finnish like in Homepage.
+- One issue is still there:
+    - Artist can create new product. And it can be seen on the shop page. Customer can then message artist also, and place an order too.
+        - But artist can't see the recently created product on the ArtistDashboard: TotalProducts. So Total products is not showing correct value.
+        - But the order placed by an customer for that product, isn't showing on artist dashboard: Orders menu-Received Orders.
+    - After user placed an order, it showing Order Number, view order status
+
+
+
+Now, order can be seen in the artist page. But when I open orders tab, in the console I saw this error message:
+Migration error: FirebaseError: Missing or insufficient permissions.migrateArtistIds	@	OrderService.js:103
+await in migrateArtistIds.
+
+I also noticed one more thing:
+When customer placed an order for some product, the product number shown was "Order Number #UGB4GORCL"
+BUT in artist page it's showing like this "#UQHUGFW0
+pending".
+So, order number is not same in both pages.
+
+Let's solve this issue also.
+When customer places an order it also shows "View Order Status" button. But when I click on it, it's not doing anything. It should show the order details.
+Let's make a plan to solve product status from artist page and also for customer to be able to see the order status.
+
+In the artist page, in the Orders tab, for the order date of order is displaying like "18 Feb 2026", it would be good to display it like "18 Feb 2026, 12:00 AM" or something like this, with time also.
+
+When customer placed an order, the recieved order is not immediately visible in the artist page. It is visible after refreshing the page. Is it possible to make it visible immediately? or not?
+
+Let's create all the related things for Orders tab in artist page. Like what artist can able to do after recieving order in that tab?
+Like a complete order management system for artist.
+Like having a order status, and artist can update the order status. And customer can see the order status.
+Like, when customer places an order, it is showing "pending" status. So artist can update the status to "processing", "shipped", "delivered", "cancelled".
+Let's do on A complete cycle for order related thing with artist and customer.
+
+First let's create a plan for this.

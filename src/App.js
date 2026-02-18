@@ -1,13 +1,18 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import './i18n';
 import HomePage from './pages/HomePage';
 import ProductPage from './pages/ProductPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrderSuccessPage from './pages/OrderSuccessPage';
+import OrderDetailsPage from './pages/OrderDetailsPage';
+import CustomerOrdersPage from './pages/CustomerOrdersPage';
+import SearchPage from './pages/SearchPage';
 import ArtistLayout from './components/layout/ArtistLayout';
 import ArtistDashboard from './pages/artist/ArtistDashboard';
 import ArtistMessagesPage from './pages/artist/ArtistMessagesPage';
 import ArtistProductsPage from './pages/artist/ArtistProductsPage';
+import ArtistOrdersPage from './pages/artist/ArtistOrdersPage';
 import LoginPage from './pages/auth/LoginPage';
 import SignupPage from './pages/auth/SignupPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -32,7 +37,14 @@ function App() {
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/product/:id" element={<ProductPage />} />
+                <Route path="/search" element={<SearchPage />} />
                 <Route path="/order-confirmation" element={<OrderSuccessPage />} />
+                <Route path="/order/:id" element={<OrderDetailsPage />} />
+                <Route path="/my-orders" element={
+                  <ProtectedRoute>
+                    <CustomerOrdersPage />
+                  </ProtectedRoute>
+                } />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
 
@@ -52,6 +64,7 @@ function App() {
                   <Route index element={<ArtistDashboard />} />
                   <Route path="messages" element={<ArtistMessagesPage />} />
                   <Route path="products" element={<ArtistProductsPage />} />
+                  <Route path="orders" element={<ArtistOrdersPage />} />
                 </Route>
               </Routes>
 

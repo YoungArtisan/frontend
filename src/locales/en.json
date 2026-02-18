@@ -1,0 +1,78 @@
+{
+    "nav": {
+        "shop": "Shop",
+        "sell": "Sell",
+        "dashboard": "Dashboard",
+        "about": "About",
+        "signIn": "Sign In",
+        "signOut": "Sign Out",
+        "artistDashboard": "Artist Dashboard",
+        "search": "Search",
+        "myOrders": "My Orders"
+    },
+    "hero": {
+        "title": "Support the Next Generation of Makers.",
+        "subtitle": "Discover unique, handmade crafts from kid artists around the world.",
+        "shopBtn": "Shop Unique Gifts",
+        "sellBtn": "Start Selling Today (Kids)"
+    },
+    "search": {
+        "placeholder": "Search products, artists...",
+        "title": "Search Results",
+        "resultsFor": "Results for",
+        "noResults": "No products found for",
+        "noResultsHint": "Try a different keyword.",
+        "allProducts": "All Products"
+    },
+    "cart": {
+        "title": "Shopping Cart",
+        "empty": "Your cart is empty",
+        "checkout": "Checkout",
+        "total": "Total"
+    },
+    "checkout": {
+        "title": "Checkout",
+        "shipping": "Shipping Information",
+        "payment": "Payment Information",
+        "fullName": "Full Name",
+        "email": "Email",
+        "address": "Address",
+        "city": "City",
+        "zipCode": "Zip Code",
+        "cardNumber": "Card Number",
+        "expiryDate": "Expiry Date",
+        "cvv": "CVV",
+        "placeOrder": "Place Order",
+        "processing": "Processing...",
+        "orderSummary": "Order Summary",
+        "subtotal": "Subtotal",
+        "tax": "Tax (10%)",
+        "emptyCart": "Your cart is empty",
+        "emptyCartHint": "Add some items to your cart before checking out.",
+        "continueShopping": "Continue Shopping"
+    },
+    "artist": {
+        "welcome": "Welcome back",
+        "shopToday": "Here's what's happening with your shop today.",
+        "totalProducts": "Total Products",
+        "totalSales": "Total Sales",
+        "activeOrders": "Active Orders",
+        "messages": "Messages",
+        "quickActions": "Quick Actions",
+        "viewMessages": "View Messages",
+        "chatWithCustomers": "Chat with customers",
+        "addProduct": "Add Product",
+        "comingSoon": "Coming soon",
+        "viewAnalytics": "View Analytics",
+        "recentActivity": "Recent Activity",
+        "backToDashboard": "Back to Dashboard"
+    },
+    "footer": {
+        "tagline": "Empowering young creators worldwide.",
+        "rights": "All rights reserved."
+    },
+    "language": {
+        "en": "English",
+        "fi": "Suomi"
+    }
+}

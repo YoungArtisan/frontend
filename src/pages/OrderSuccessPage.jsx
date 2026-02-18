@@ -1,10 +1,13 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 
 const OrderSuccessPage = () => {
     const navigate = useNavigate();
+    const { search } = useLocation();
+    const queryParams = new URLSearchParams(search);
+    const orderId = queryParams.get('orderId');
 
     return (
         <>
@@ -33,8 +36,13 @@ const OrderSuccessPage = () => {
                         <div className="bg-bg-neutral p-6 rounded-lg mb-8">
                             <p className="text-sm text-gray-500 mb-2">Order Number</p>
                             <p className="text-2xl font-bold text-brand-primary">
-                                #{Math.random().toString(36).substr(2, 9).toUpperCase()}
+                                #{orderId ? orderId.slice(-8).toUpperCase() : 'UNKNOWN'}
                             </p>
+                            {orderId && (
+                                <p className="text-xs text-gray-400 mt-2">
+                                    Save this ID to track your order
+                                </p>
+                            )}
                         </div>
 
                         <div className="space-y-3">
@@ -44,12 +52,14 @@ const OrderSuccessPage = () => {
                             >
                                 Continue Shopping
                             </button>
-                            <button
-                                onClick={() => navigate('/')}
-                                className="w-full btn btn-outline"
-                            >
-                                View Order Status
-                            </button>
+                            {orderId && (
+                                <button
+                                    onClick={() => navigate(`/order/${orderId}`)}
+                                    className="w-full btn btn-outline"
+                                >
+                                    View Order Status
+                                </button>
+                            )}
                         </div>
                     </div>
 

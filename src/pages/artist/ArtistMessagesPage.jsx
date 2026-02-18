@@ -1,8 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useChat } from '../../context/ChatContext';
 import { useAuth } from '../../context/AuthContext';
 
 const ArtistMessagesPage = () => {
+    const navigate = useNavigate();
+    const { t } = useTranslation();
     const { currentUser } = useAuth();
     const {
         conversations,
@@ -116,7 +120,16 @@ const ArtistMessagesPage = () => {
                         <div className="w-1/3 border-r border-gray-200 flex flex-col h-full">
                             {/* Header */}
                             <div className="p-4 border-b border-gray-100 flex-shrink-0">
-                                <h1 className="text-xl font-bold text-gray-800">Messages</h1>
+                                <div className="flex items-center gap-3 mb-2">
+                                    <button
+                                        onClick={() => navigate('/artist')}
+                                        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-brand-primary transition-colors"
+                                    >
+                                        <i className="fa-solid fa-arrow-left text-xs"></i>
+                                        {t('artist.backToDashboard')}
+                                    </button>
+                                </div>
+                                <h1 className="text-xl font-bold text-gray-800">{t('artist.messages')}</h1>
                             </div>
 
                             {/* Search Bar */}

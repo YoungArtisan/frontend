@@ -1,13 +1,17 @@
 import React from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import LanguageSwitcher from '../common/LanguageSwitcher';
 
 const ArtistLayout = () => {
     const location = useLocation();
+    const { currentUser } = useAuth();
 
     const navItems = [
         { path: '/artist', label: 'Dashboard', icon: 'fa-chart-line' },
         { path: '/artist/messages', label: 'Messages', icon: 'fa-comments' },
         { path: '/artist/products', label: 'My Products', icon: 'fa-box' },
+        { path: '/artist/orders', label: 'Orders', icon: 'fa-shopping-bag' },
         { path: '/artist/settings', label: 'Settings', icon: 'fa-gear', disabled: true }
     ];
 
@@ -25,17 +29,21 @@ const ArtistLayout = () => {
                         </span>
                     </div>
                     <div className="flex items-center gap-4">
-                        <Link to="/" className="text-sm text-gray-600 hover:text-brand-primary">
+                        <Link to="/" className="text-sm text-gray-600 hover:text-brand-primary hidden md:block">
                             <i className="fa-solid fa-store mr-2"></i>
                             View Shop
                         </Link>
+
+                        {/* Language Switcher */}
+                        <div className="mr-2">
+                            <LanguageSwitcher />
+                        </div>
+
                         <div className="flex items-center gap-2">
-                            <img
-                                src="https://placehold.co/40x40?text=A"
-                                alt="Artist"
-                                className="w-10 h-10 rounded-full"
-                            />
-                            <span className="font-semibold">CraftyKid_Leo</span>
+                            <div className="w-10 h-10 rounded-full bg-brand-primary flex items-center justify-center text-white font-bold text-sm">
+                                {currentUser?.displayName?.[0]?.toUpperCase() || 'A'}
+                            </div>
+                            <span className="font-semibold text-gray-800 hidden md:block">{currentUser?.displayName || 'Artist'}</span>
                         </div>
                     </div>
                 </div>
@@ -43,7 +51,7 @@ const ArtistLayout = () => {
 
             <div className="flex">
                 {/* Sidebar */}
-                <aside className="w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-73px)]">
+                <aside className="w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-73px)] hidden md:block">
                     <nav className="p-4 space-y-2">
                         {navItems.map((item) => {
                             const isActive = location.pathname === item.path;
@@ -70,8 +78,25 @@ const ArtistLayout = () => {
                     </nav>
                 </aside>
 
+                {/* Mobile Bottom Nav */}
+                <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 flex justify-around p-2">
+                    {navItems.filter(item => !item.disabled).map((item) => {
+                        const isActive = location.pathname === item.path;
+                        return (
+                            <Link
+                                key={item.path}
+                                to={item.path}
+                                className={`flex flex-col items-center p-2 rounded-lg ${isActive ? 'text-brand-primary' : 'text-gray-500'}`}
+                            >
+                                <i className={`fa-solid ${item.icon} text-lg`}></i>
+                                <span className="text-[10px] mt-1">{item.label}</span>
+                            </Link>
+                        )
+                    })}
+                </nav>
+
                 {/* Main Content */}
-                <main className="flex-1">
+                <main className="flex-1 mb-16 md:mb-0">
                     <Outlet />
                 </main>
             </div>

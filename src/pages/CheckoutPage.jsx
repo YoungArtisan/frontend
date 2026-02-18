@@ -13,13 +13,11 @@ const CheckoutPage = () => {
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         fullName: currentUser?.displayName || '',
+        mobileNumber: '',
         email: currentUser?.email || '',
         address: '',
         city: '',
-        zipCode: '',
-        cardNumber: '',
-        expiryDate: '',
-        cvv: ''
+        zipCode: ''
     });
 
     const handleInputChange = (e) => {
@@ -40,8 +38,8 @@ const CheckoutPage = () => {
         }
 
         // Basic validation
-        if (!formData.fullName || !formData.email || !formData.address || !formData.city || !formData.zipCode) {
-            alert('Please fill in all shipping details');
+        if (!formData.fullName || !formData.mobileNumber || !formData.address || !formData.city || !formData.zipCode) {
+            alert('Please fill in all required fields (Full Name, Mobile Number, Address, City, Zip Code)');
             return;
         }
 
@@ -54,7 +52,8 @@ const CheckoutPage = () => {
             const orderData = {
                 customerId: currentUser.uid,
                 customerName: formData.fullName,
-                email: formData.email,
+                mobileNumber: formData.mobileNumber,
+                email: formData.email || null,
                 shippingAddress: {
                     address: formData.address,
                     city: formData.city,
@@ -65,18 +64,21 @@ const CheckoutPage = () => {
                     title: item.title,
                     price: item.price,
                     quantity: item.quantity,
-                    artistId: item.artist.uid || item.artist.name,
-                    artistName: item.artist.name,
+                    artistId: item.artist?.uid || null,
+                    artistName: item.artist?.name || null,
                     image: item.image
                 })),
+                // Top-level array of artist UIDs for efficient Firestore querying
+                artistIds: [...new Set(cartItems.map(item => item.artist?.uid).filter(Boolean))],
                 subtotal,
                 tax,
                 total
             };
 
-            await placeOrder(orderData);
+            const newOrder = await placeOrder(orderData);
             clearCart();
-            navigate('/order-confirmation');
+            // Pass the real Firestore ID to the success page via query param
+            navigate(`/order-confirmation?orderId=${newOrder.id}`);
         } catch (error) {
             console.error('Error during checkout:', error);
             alert('Failed to place order. Please try again.');
@@ -132,14 +134,28 @@ const CheckoutPage = () => {
                                             />
                                         </div>
                                         <div className="md:col-span-2">
-                                            <label className="block text-sm font-semibold mb-2">Email *</label>
+                                            <label className="block text-sm font-semibold mb-2">Mobile Number *</label>
+                                            <input
+                                                type="tel"
+                                                name="mobileNumber"
+                                                value={formData.mobileNumber}
+                                                onChange={handleInputChange}
+                                                placeholder="+358 40 123 4567"
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-primary"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <label className="block text-sm font-semibold mb-2">
+                                                Email
+                                                <span className="ml-2 text-xs font-normal text-gray-400">(optional)</span>
+                                            </label>
                                             <input
                                                 type="email"
                                                 name="email"
                                                 value={formData.email}
                                                 onChange={handleInputChange}
                                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-primary"
-                                                required
                                             />
                                         </div>
                                         <div className="md:col-span-2">
@@ -174,48 +190,6 @@ const CheckoutPage = () => {
                                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-primary"
                                                 required
                                             />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Payment Information */}
-                                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-                                    <h2 className="text-xl font-bold mb-4">Payment Information</h2>
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className="block text-sm font-semibold mb-2">Card Number</label>
-                                            <input
-                                                type="text"
-                                                name="cardNumber"
-                                                value={formData.cardNumber}
-                                                onChange={handleInputChange}
-                                                placeholder="1234 5678 9012 3456"
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-primary"
-                                            />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-sm font-semibold mb-2">Expiry Date</label>
-                                                <input
-                                                    type="text"
-                                                    name="expiryDate"
-                                                    value={formData.expiryDate}
-                                                    onChange={handleInputChange}
-                                                    placeholder="MM/YY"
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-primary"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-semibold mb-2">CVV</label>
-                                                <input
-                                                    type="text"
-                                                    name="cvv"
-                                                    value={formData.cvv}
-                                                    onChange={handleInputChange}
-                                                    placeholder="123"
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-primary"
-                                                />
-                                            </div>
                                         </div>
                                     </div>
                                 </div>

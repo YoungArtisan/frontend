@@ -1,6 +1,11 @@
 import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const Hero = () => {
+    const { t } = useTranslation();
+    const navigate = useNavigate();
+
     return (
         <section className="relative h-auto min-h-[450px] md:h-[500px] bg-cover bg-center flex items-center justify-center p-5 md:p-0 
             bg-[url('../../assets/banner-mobile.png')] md:bg-[url('../../assets/banner.png')]">
@@ -10,12 +15,12 @@ const Hero = () => {
                     before:content-[''] before:absolute before:top-2.5 before:left-2.5 before:-right-2.5 before:-bottom-2.5 
                     before:bg-brand-accent before:rounded-soft before:-z-10 before:opacity-50">
 
-                    <h1 className="text-3xl md:text-5xl font-bold mb-4 font-heading leading-tight">Support the Next Generation of Makers.</h1>
-                    <p className="text-base md:text-lg text-text-dark mb-8">Discover unique, handmade crafts from kid artists around the world.</p>
+                    <h1 className="text-3xl md:text-5xl font-bold mb-4 font-heading leading-tight">{t('hero.title')}</h1>
+                    <p className="text-base md:text-lg text-text-dark mb-8">{t('hero.subtitle')}</p>
 
                     <div className="flex flex-col md:flex-row gap-5 justify-center">
-                        <a href="/" className="btn btn-primary">Shop Unique Gifts</a>
-                        <a href="/" className="btn btn-secondary">Start Selling Today (Kids)</a>
+                        <Link to="/search" className="btn btn-primary">{t('hero.shopBtn')}</Link>
+                        <Link to="/signup" className="btn btn-secondary">{t('hero.sellBtn')}</Link>
                     </div>
                 </div>
             </div>

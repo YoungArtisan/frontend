@@ -1,0 +1,78 @@
+{
+    "nav": {
+        "shop": "Kauppa",
+        "sell": "Myy",
+        "dashboard": "Hallintapaneeli",
+        "about": "Tietoa",
+        "signIn": "Kirjaudu sisään",
+        "signOut": "Kirjaudu ulos",
+        "artistDashboard": "Taiteilijan hallintapaneeli",
+        "search": "Haku",
+        "myOrders": "Omat Tilaukset"
+    },
+    "hero": {
+        "title": "Tue seuraavaa tekijäsukupolvea.",
+        "subtitle": "Löydä ainutlaatuisia, käsintehtyjä käsitöitä lapsiartisteilta ympäri maailmaa.",
+        "shopBtn": "Osta ainutlaatuisia lahjoja",
+        "sellBtn": "Aloita myyminen tänään (Lapset)"
+    },
+    "search": {
+        "placeholder": "Etsi tuotteita, taiteilijoita...",
+        "title": "Hakutulokset",
+        "resultsFor": "Tulokset haulle",
+        "noResults": "Ei tuotteita haulle",
+        "noResultsHint": "Kokeile eri hakusanaa.",
+        "allProducts": "Kaikki tuotteet"
+    },
+    "cart": {
+        "title": "Ostoskori",
+        "empty": "Ostoskorisi on tyhjä",
+        "checkout": "Kassalle",
+        "total": "Yhteensä"
+    },
+    "checkout": {
+        "title": "Kassalle",
+        "shipping": "Toimitusosoite",
+        "payment": "Maksutiedot",
+        "fullName": "Koko nimi",
+        "email": "Sähköposti",
+        "address": "Osoite",
+        "city": "Kaupunki",
+        "zipCode": "Postinumero",
+        "cardNumber": "Kortin numero",
+        "expiryDate": "Voimassaoloaika",
+        "cvv": "CVV",
+        "placeOrder": "Tee tilaus",
+        "processing": "Käsitellään...",
+        "orderSummary": "Tilauksen yhteenveto",
+        "subtotal": "Välisumma",
+        "tax": "Vero (10%)",
+        "emptyCart": "Ostoskorisi on tyhjä",
+        "emptyCartHint": "Lisää tuotteita ostoskoriin ennen kassalle siirtymistä.",
+        "continueShopping": "Jatka ostoksia"
+    },
+    "artist": {
+        "welcome": "Tervetuloa takaisin",
+        "shopToday": "Tässä on mitä kaupallasi tapahtuu tänään.",
+        "totalProducts": "Tuotteet yhteensä",
+        "totalSales": "Myynti yhteensä",
+        "activeOrders": "Aktiiviset tilaukset",
+        "messages": "Viestit",
+        "quickActions": "Pikavalinnat",
+        "viewMessages": "Näytä viestit",
+        "chatWithCustomers": "Keskustele asiakkaiden kanssa",
+        "addProduct": "Lisää tuote",
+        "comingSoon": "Tulossa pian",
+        "viewAnalytics": "Näytä analytiikka",
+        "recentActivity": "Viimeaikainen toiminta",
+        "backToDashboard": "Takaisin hallintapaneeliin"
+    },
+    "footer": {
+        "tagline": "Voimaannutetaan nuoria luojia maailmanlaajuisesti.",
+        "rights": "Kaikki oikeudet pidätetään."
+    },
+    "language": {
+        "en": "English",
+        "fi": "Suomi"
+    }
+}
